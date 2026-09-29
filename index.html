@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="theme-color" content="#000000">
+  <title></title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; overscroll-behavior: none; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Helvetica Neue", sans-serif;
+      background: radial-gradient(ellipse at 50% 20%, #1c1c1c 0%, #050505 70%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+    main {
+      width: 100%;
+      max-width: 380px;
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .cover-wrap {
+      width: 260px;
+      height: 260px;
+      margin-bottom: 48px;
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    .cover-wrap:active { transform: scale(0.97); }
+    .vinyl {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background:
+        repeating-radial-gradient(circle at center, transparent 0 3px, rgba(255,255,255,0.05) 3px 4px),
+        conic-gradient(from 45deg, #161616, #2a2a2a, #161616, #353535, #161616);
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.06),
+        inset 0 0 30px rgba(0,0,0,0.6),
+        0 24px 60px rgba(0,0,0,0.7),
+        0 4px 12px rgba(0,0,0,0.4);
+      animation: spin 10s linear infinite;
+      animation-play-state: paused;
+    }
+    .cover-wrap.playing .vinyl { animation-play-state: running; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .label {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100px; height: 100px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #bae6fd 0%, #7dd3fc 60%, #38bdf8 100%);
+      box-shadow:
+        0 4px 24px rgba(125,211,252,0.4),
+        inset 0 0 0 2px rgba(255,255,255,0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0c1a2b;
+    }
+    .label .icon {
+      font-size: 34px;
+      line-height: 1;
+      transition: transform 0.3s ease;
+      transform: translateX(2px);
+    }
+    .cover-wrap.playing .label .icon { transform: translateX(0) scale(0.85); }
+    .progress {
+      width: 100%;
+      height: 3px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #bae6fd, #7dd3fc, #38bdf8);
+      transition: width 0.15s linear;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="cover-wrap" id="cover" role="button" aria-label="播放">
+      <div class="vinyl"></div>
+      <div class="label"><span class="icon" id="icon">▶</span></div>
+    </div>
+    <div class="progress"><div class="bar" id="bar"></div></div>
+  </main>
+
+  <audio id="audio" src="song.m4a" preload="auto" playsinline></audio>
+
+  <script>
+    (function () {
+      const audio = document.getElementById('audio');
+      const cover = document.getElementById('cover');
+      const icon = document.getElementById('icon');
+      const bar = document.getElementById('bar');
+
+      audio.addEventListener('timeupdate', () => {
+        if (!audio.duration) return;
+        bar.style.width = (audio.currentTime / audio.duration * 100) + '%';
+      });
+      audio.addEventListener('ended', () => {
+        cover.classList.remove('playing');
+        icon.textContent = '↻';
+      });
+
+      function play() {
+        audio.play().then(() => {
+          cover.classList.add('playing');
+          icon.textContent = '❚❚';
+        }).catch(() => {});
+      }
+      function pause() {
+        audio.pause();
+        cover.classList.remove('playing');
+        icon.textContent = '▶';
+      }
+      function toggle(e) {
+        if (e) e.stopPropagation();
+        if (audio.paused) play();
+        else pause();
+      }
+      cover.addEventListener('click', toggle);
+
+      document.addEventListener('click', function once() {
+        if (audio.paused) play();
+        document.removeEventListener('click', once);
+      });
+
+      window.addEventListener('load', () => {
+        if (audio.readyState >= 1) tryPlay();
+        else audio.addEventListener('loadedmetadata', tryPlay, { once: true });
+      });
+      function tryPlay() {
+        audio.play().then(() => {
+          cover.classList.add('playing');
+          icon.textContent = '❚❚';
+        }).catch(() => {});
+      }
+    })();
+  </script>
+</body>
+</html>
